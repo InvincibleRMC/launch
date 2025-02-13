@@ -77,7 +77,7 @@ class LaunchDescription(LaunchDescriptionEntity):
         """Override describe_sub_entities from LaunchDescriptionEntity to return sub entities."""
         return self.__entities
 
-    def get_launch_arguments(self, conditional_inclusion=False) -> List[DeclareLaunchArgument]:
+    def get_launch_arguments(self, conditional_inclusion: bool = False) -> List[DeclareLaunchArgument]:
         """
         Return a list of :py:class:`launch.actions.DeclareLaunchArgument` actions.
 
@@ -91,7 +91,7 @@ class LaunchDescription(LaunchDescriptionEntity):
         ]
 
     def get_launch_arguments_with_include_launch_description_actions(
-        self, conditional_inclusion=False
+        self, conditional_inclusion: bool = False
     ) -> List[Tuple[DeclareLaunchArgument, List['IncludeLaunchDescription']]]:
         """
         Return a list of launch arguments with its associated include launch descriptions actions.

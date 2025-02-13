@@ -30,6 +30,8 @@ from typing import Union
 # since there is no definition for types-PyYAML
 import yaml  # type: ignore
 
+from typing_extensions import TypeIs
+
 from .ensure_argument_type_impl import ensure_argument_type
 from .normalize_to_list_of_substitutions_impl import normalize_to_list_of_substitutions
 from .perform_substitutions_impl import perform_substitutions
@@ -104,7 +106,7 @@ StrSomeSequenceType = Union[(
 StrSomeValueType = Union[StrSomeScalarType, StrSomeSequenceType]
 
 
-def is_typing_list(data_type: Any) -> bool:
+def is_typing_list(data_type: type[Any]) -> bool:
     """
     Return `True` if data_type is `typing.List` or a subscription of it.
 
@@ -350,11 +352,7 @@ def get_typed_value(
         return coerce_to_type(value, data_type, can_be_str=can_be_str)
 
 
-# Unfortunately, mypy is unable to correctly infer that `is_substitution` can
-# only return True when the passed tpe is either a substitution or a mixed
-# list of strings and substitutions. Indeed, there is no way that I could find
-# using overloads to describe "anything else than the above two types".
-def is_substitution(x):
+def is_substitution(x: object) -> TypeIs[SomeSubstitutionsType]:
     """
     Return `True` if `x` is some substitution.
 
@@ -426,7 +424,7 @@ def normalize_typed_substitution(
         return value
     # Resolve substitutions and list of substitutions immediately
     if is_substitution(value):
-        return normalize_to_list_of_substitutions(cast(SomeSubstitutionsType, value))
+        return normalize_to_list_of_substitutions(value)
     # For the other cases, the input must be an iterable
     if not isinstance(value, collections.abc.Iterable):
         raise TypeError(
@@ -480,7 +478,7 @@ def normalize_typed_substitution(
         if data_type not in (None, bool):
             raise TypeError(err_msg.format(bool))
         return cast(List[Union[List[Substitution], bool]], [
-            normalize_to_list_of_substitutions(cast(SomeSubstitutionsType, x))
+            normalize_to_list_of_substitutions(x)
             if is_substitution(x) else x for x in value
         ])
     if types_in_list.issubset({int, Substitution}):
@@ -488,7 +486,7 @@ def normalize_typed_substitution(
         if data_type not in (None, int):
             raise TypeError(err_msg.format(int))
         return cast(List[Union[List[Substitution], int]], [
-            normalize_to_list_of_substitutions(cast(SomeSubstitutionsType, x))
+            normalize_to_list_of_substitutions(x)
             if is_substitution(x) else x for x in value
         ])
     if types_in_list.issubset({int, float, Substitution}):
@@ -496,7 +494,7 @@ def normalize_typed_substitution(
         if data_type not in (None, float):
             raise TypeError(err_msg.format(float))
         return cast(List[Union[List[Substitution], float]], [
-            normalize_to_list_of_substitutions(cast(SomeSubstitutionsType, x))
+            normalize_to_list_of_substitutions(x)
             if is_substitution(x) else float(cast(Union[int, float], x)) for x in value
         ])
     # Invalid input

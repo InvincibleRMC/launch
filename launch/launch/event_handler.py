@@ -51,7 +51,7 @@ class BaseEventHandler:
         self.__handle_once = handle_once
 
     @property
-    def handle_once(self):
+    def handle_once(self) -> bool:
         """Getter for handle_once flag."""
         return self.__handle_once
 
@@ -125,7 +125,7 @@ class EventHandler(BaseEventHandler):
         self.__entities = entities
 
     @property
-    def entities(self):
+    def entities(self) -> Optional[SomeEntitiesType]:
         """Getter for entities."""
         return self.__entities
 

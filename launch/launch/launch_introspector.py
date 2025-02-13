@@ -39,7 +39,7 @@ def indent(lines: List[Text], indention: Text = '    ') -> List[Text]:
 
 def tree_like_indent(lines: List[Text]) -> List[Text]:
     """Replace whitespace with "tree"-like indentation symbols."""
-    result = []
+    result: List[Text] = []
     previous_first_non_whitespace = None
     for old_line in lines:
         if not old_line.startswith('    '):
@@ -66,10 +66,10 @@ def tree_like_indent(lines: List[Text]) -> List[Text]:
 
 def format_entities(entities: Iterable[LaunchDescriptionEntity]) -> List[Text]:
     """Return a list of lines of text that represent of a list of LaunchDescriptionEntity's."""
-    result = []
+    result: List[Text] = []
     for entity in entities:
         if is_a(entity, Action):
-            result.extend(format_action(cast(Action, entity)))
+            result.extend(format_action(entity))
         else:
             result.append("Unknown entity('{}')".format(entity))
     return result
@@ -103,11 +103,11 @@ def format_event_handler(event_handler: BaseEventHandler) -> List[Text]:
 def format_action(action: Action) -> List[Text]:
     """Return a text representation of an action."""
     if is_a(action, LogInfo):
-        return ['LogInfo({})'.format(format_substitutions(cast(LogInfo, action).msg))]
+        return ['LogInfo({})'.format(format_substitutions(action.msg))]
     elif is_a(action, EmitEvent):
-        return ["EmitEvent(event='{}')".format(cast(EmitEvent, action).event.name)]
+        return ["EmitEvent(event='{}')".format(action.event.name)]
     elif is_a(action, ExecuteProcess):
-        typed_action = cast(ExecuteProcess, action)
+        typed_action = action
         msg = 'ExecuteProcess(cmd=[{}], cwd={}, env={}, shell={})'.format(
             ', '.join([format_substitutions(x) for x in typed_action.cmd]),
             typed_action.cwd if typed_action.cwd is None else "'{}'".format(
@@ -121,7 +121,7 @@ def format_action(action: Action) -> List[Text]:
         return [msg]
     elif is_a(action, RegisterEventHandler):
         # Different variable name used to assist with type checking.
-        typed_action2 = cast(RegisterEventHandler, action)
+        typed_action2 = action
         result = ["RegisterEventHandler('{}'):".format(typed_action2.event_handler)]
         result.extend(indent(format_event_handler(typed_action2.event_handler)))
         return result

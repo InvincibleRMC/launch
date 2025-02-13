@@ -14,15 +14,21 @@
 
 """Module for the class tools utility functions."""
 
+from typing import Any
+from typing import overload
+from typing import TypeVar
 import inspect
 
+from typing_extensions import TypeIs
 
-def isclassinstance(obj):
+T = TypeVar('T')
+
+def isclassinstance(obj: object) -> bool:
     """Return True if obj is an instance of a class."""
     return hasattr(obj, '__class__')
 
 
-def is_a(obj, entity_type):
+def is_a(obj: object, entity_type: type[T]) -> TypeIs[T]:
     """Return True if obj is an instance of the entity_type class."""
     if not isclassinstance(obj):
         raise RuntimeError("obj '{}' is not a class instance".format(obj))
@@ -30,8 +36,13 @@ def is_a(obj, entity_type):
         raise RuntimeError("entity_type '{}' is not a class".format(obj))
     return isinstance(obj, entity_type)
 
+@overload
+def is_a_subclass(obj: type[Any], entity_type: type[T]) -> TypeIs[type[T]]: ...
 
-def is_a_subclass(obj, entity_type):
+@overload
+def is_a_subclass(obj: object, entity_type: type[T]) -> TypeIs[T]: ...
+
+def is_a_subclass(obj: Any, entity_type: type[Any]) -> bool:
     """Return True if obj is an instance of the entity_type class or one of its subclass types."""
     if is_a(obj, entity_type):
         return True

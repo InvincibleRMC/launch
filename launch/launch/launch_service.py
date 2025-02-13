@@ -25,6 +25,7 @@ import traceback
 from typing import Coroutine
 from typing import Iterable
 from typing import List  # noqa: F401
+from typing import Literal
 from typing import Optional
 from typing import Set  # noqa: F401
 from typing import Text
@@ -125,7 +126,7 @@ class LaunchService:
         """
         self.emit_event(IncludeLaunchDescription(launch_description))
 
-    def _prune_and_count_entity_future_pairs(self):
+    def _prune_and_count_entity_future_pairs(self) -> int:
         needs_prune = False
         for pair in self._entity_future_pairs:
             if pair[1].done():
@@ -135,7 +136,7 @@ class LaunchService:
                 [pair for pair in self._entity_future_pairs if not pair[1].done()]
         return len(self._entity_future_pairs)
 
-    def _prune_and_count_context_completion_futures(self):
+    def _prune_and_count_context_completion_futures(self) -> int:
         needs_prune = False
         for future in self.__context._completion_futures:
             if future.done():
@@ -145,7 +146,7 @@ class LaunchService:
                 [f for f in self.__context._completion_futures if not f.done()]
         return len(self.__context._completion_futures)
 
-    def _is_idle(self):
+    def _is_idle(self) -> bool:
         number_of_entity_future_pairs = self._prune_and_count_entity_future_pairs()
         number_of_entity_future_pairs += self._prune_and_count_context_completion_futures()
         return number_of_entity_future_pairs == 0 and self.__context._event_queue.empty()
@@ -188,7 +189,7 @@ class LaunchService:
             # Setup custom signal handlers for SIGINT, SIGTERM and maybe SIGQUIT.
             sigint_received = False
 
-            def _on_sigint(signum):
+            def _on_sigint(signum: int) -> None:
                 nonlocal sigint_received
                 base_msg = 'user interrupted with ctrl-c (SIGINT)'
                 if not sigint_received:
@@ -201,7 +202,7 @@ class LaunchService:
                 else:
                     self.__logger.warning('{} again, ignoring...'.format(base_msg))
 
-            def _on_sigterm(signum):
+            def _on_sigterm(signum: int) -> None:
                 signame = signal.Signals(signum).name
                 self.__logger.error(
                     'user interrupted with ctrl-\\ ({}), terminating...'.format(signame))
@@ -256,7 +257,7 @@ class LaunchService:
                 #     'launch.LaunchService',
                 #     "processing event: '{}' x '{}'".format(event, event_handler))
 
-    async def run_async(self, *, shutdown_when_idle=True) -> int:
+    async def run_async(self, *, shutdown_when_idle: bool = True) -> Literal[0, 1]:
         """
         Visit all entities of all included LaunchDescription instances asynchronously.
 
@@ -361,7 +362,7 @@ class LaunchService:
                     continue
             return return_code
 
-    def run(self, *, shutdown_when_idle=True) -> int:
+    def run(self, *, shutdown_when_idle: bool = True) -> int:
         """
         Run an event loop and visit all entities of all included LaunchDescription instances.
 
@@ -384,12 +385,13 @@ class LaunchService:
             except KeyboardInterrupt:
                 continue
 
-    def __on_shutdown(self, event: Event, context: LaunchContext) -> Optional[SomeEntitiesType]:
+    def __on_shutdown(self, event: Event, context: LaunchContext) -> None:
         self.__shutting_down = True
         self.__context._set_is_shutdown(True)
         return None
 
-    def _shutdown(self, *, reason, due_to_sigint, force_sync=False) -> Optional[Coroutine]:
+    def _shutdown(self, *, reason: Text, due_to_sigint: bool,
+                  force_sync: bool = False) -> Optional[Coroutine[None, None, None]]:
         # Assumption is that this method is only called when running.
         retval = None
         if not self.__shutting_down:
@@ -413,7 +415,7 @@ class LaunchService:
         self.__context._set_is_shutdown(True)
         return retval
 
-    def shutdown(self, force_sync=False) -> Optional[Coroutine]:
+    def shutdown(self, force_sync: bool = False) -> Optional[Coroutine]:
         """
         Shutdown all on-going activities and then stop the asyncio run loop.
 
@@ -434,7 +436,7 @@ class LaunchService:
         return None
 
     @property
-    def context(self):
+    def context(self) -> LaunchContext:
         """Getter for context."""
         return self.__context
 
@@ -444,6 +446,6 @@ class LaunchService:
         return self.__loop_from_run_thread
 
     @property
-    def task(self):
+    def task(self) -> Optional[asyncio.Task]:
         """Return asyncio task associated with this launch service."""
         return self.__this_task

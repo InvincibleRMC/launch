@@ -71,11 +71,11 @@ class Entity:
 
     def get_attr(  # noqa: F811
         self,
-        name,
+        name: Text,
         *,
-        data_type=str,
-        optional=False,
-        can_be_str=True,
+        data_type: Type = str,
+        optional:bool = False,
+        can_be_str: bool = True,
     ):
         """
         Access an attribute of the entity.

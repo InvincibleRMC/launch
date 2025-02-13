@@ -60,8 +60,8 @@ class EqualsSubstitution(Substitution):
 
     def __init__(
         self,
-        left: Optional[Union[Any, Iterable[Any]]],
-        right: Optional[Union[Any, Iterable[Any]]]
+        left: Optional[Union[object, Iterable[object]]],
+        right: Optional[Union[object, Iterable[object]]]
     ) -> None:
         """Create an EqualsSubstitution substitution."""
         super().__init__()
@@ -86,12 +86,8 @@ class EqualsSubstitution(Substitution):
         # above, left & right must be substitutions. Unfortunately due to the
         # way is_substitution is written, it's hard to get mypy to typecheck
         # it correctly, so cast here.
-        self.__left = normalize_to_list_of_substitutions(
-                cast(Union[str, Substitution, Sequence[Union[str, Substitution]]], left)
-                )
-        self.__right = normalize_to_list_of_substitutions(
-                cast(Union[str, Substitution, Sequence[Union[str, Substitution]]], right)
-                )
+        self.__left = normalize_to_list_of_substitutions(left)
+        self.__right = normalize_to_list_of_substitutions(right)
 
     @classmethod
     def parse(cls, data: Sequence[SomeSubstitutionsType]):

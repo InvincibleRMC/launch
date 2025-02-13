@@ -79,7 +79,7 @@ class LaunchContext:
         return self.__argv
 
     @property
-    def noninteractive(self):
+    def noninteractive(self) -> bool:
         """Getter for noninteractive."""
         return self.__noninteractive
 
@@ -87,7 +87,7 @@ class LaunchContext:
         self.__is_shutdown = state
 
     @property
-    def is_shutdown(self):
+    def is_shutdown(self) -> bool:
         """Getter for is_shutdown."""
         return self.__is_shutdown
 
@@ -95,7 +95,7 @@ class LaunchContext:
         self.__asyncio_loop = loop
 
     @property
-    def asyncio_loop(self):
+    def asyncio_loop(self) -> Optional[asyncio.AbstractEventLoop]:
         """Getter for asyncio_loop."""
         return self.__asyncio_loop
 
@@ -103,10 +103,10 @@ class LaunchContext:
         """Add an asyncio.Future to the list of futures that the LaunchService will wait on."""
         self._completion_futures.append(completion_future)
 
-    def _push_locals(self):
+    def _push_locals(self) -> None:
         self.__locals_stack.append(dict(self.__locals))
 
-    def _pop_locals(self):
+    def _pop_locals(self) -> None:
         if not self.__locals_stack:
             raise RuntimeError('locals stack unexpectedly empty')
         self.__locals = self.__locals_stack.pop()
@@ -127,10 +127,10 @@ class LaunchContext:
         self.__locals.update(extensions)
         self._clear_combined_locals_cache()
 
-    def _clear_combined_locals_cache(self):
+    def _clear_combined_locals_cache(self) -> None:
         self.__combined_locals_cache = None
 
-    def _get_combined_locals(self):
+    def _get_combined_locals(self) -> Dict[Text, Any]:
         if self.__combined_locals_cache is None:
             self.__combined_locals_cache = dict(self.__globals)
             self.__combined_locals_cache.update(self.__locals)
@@ -164,7 +164,7 @@ class LaunchContext:
 
         return AttributeDict(self._get_combined_locals())
 
-    def _push_environment(self):
+    def _push_environment(self) -> None:
         self.__environment_stack.append(os.environ.copy())
 
     def _pop_environment(self):

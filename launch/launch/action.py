@@ -20,12 +20,13 @@ from typing import List
 from typing import Optional
 from typing import Text
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 from .condition import Condition
 from .launch_context import LaunchContext
 from .launch_description_entity import LaunchDescriptionEntity
 
-if False:
+if TYPE_CHECKING:
     from .frontend import Entity  # noqa: F401
     from .frontend import Parser  # noqa: F401
 
