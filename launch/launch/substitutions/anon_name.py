@@ -17,11 +17,18 @@
 from typing import List
 from typing import Sequence
 from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import TypedDict
 
 from ..frontend import expose_substitution
 from ..launch_context import LaunchContext
 from ..some_substitutions_type import SomeSubstitutionsType
 from ..substitution import Substitution
+
+
+class AnonNameParsedDict(TypedDict):
+    name: SomeSubstitutionsType
 
 
 @expose_substitution('anon')
@@ -41,7 +48,8 @@ class AnonName(Substitution):
         self.__name = normalize_to_list_of_substitutions(name)
 
     @classmethod
-    def parse(cls, data: Sequence[SomeSubstitutionsType]):
+    def parse(cls, data: Sequence[SomeSubstitutionsType]
+              ) -> Tuple[Type['AnonName'], AnonNameParsedDict]:
         """Parse `AnonName` substitution."""
         if len(data) != 1:
             raise TypeError('anon substitution expects 1 argument')

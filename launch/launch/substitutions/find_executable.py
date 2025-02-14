@@ -17,6 +17,9 @@
 from typing import List
 from typing import Sequence
 from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import TypedDict
 
 from osrf_pycommon.process_utils import which  # type: ignore
 
@@ -25,6 +28,10 @@ from ..frontend import expose_substitution
 from ..launch_context import LaunchContext
 from ..some_substitutions_type import SomeSubstitutionsType
 from ..substitution import Substitution
+
+
+class FindExecutableParsedDict(TypedDict):
+    name: SomeSubstitutionsType
 
 
 @expose_substitution('find-exec')
@@ -43,7 +50,8 @@ class FindExecutable(Substitution):
         self.__name = normalize_to_list_of_substitutions(name)
 
     @classmethod
-    def parse(cls, data: Sequence[SomeSubstitutionsType]):
+    def parse(cls, data: Sequence[SomeSubstitutionsType]
+              ) -> Tuple[Type['FindExecutable'], FindExecutableParsedDict]:
         """Parse `FindExecutable` substitution."""
         if len(data) != 1:
             raise AttributeError('find-exec substitution expects 1 argument')

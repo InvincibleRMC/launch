@@ -68,7 +68,7 @@ class OpaqueCoroutine(Action):
         args: Optional[Iterable[Any]] = None,
         kwargs: Optional[Dict[Text, Any]] = None,
         ignore_context: bool = False,
-        **left_over_kwargs
+        **left_over_kwargs: Any
     ) -> None:
         """Create an OpaqueCoroutine action."""
         super().__init__(**left_over_kwargs)

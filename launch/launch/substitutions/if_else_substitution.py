@@ -17,6 +17,11 @@
 from typing import List
 from typing import Sequence
 from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import TypedDict
+
+from typing_extensions import NotRequired
 
 from .substitution_failure import SubstitutionFailure
 from ..frontend import expose_substitution
@@ -26,6 +31,12 @@ from ..substitution import Substitution
 from ..utilities import normalize_to_list_of_substitutions
 from ..utilities import perform_substitutions
 from ..utilities.type_utils import perform_typed_substitution
+
+
+class IfElseSubstitutionParsedDict(TypedDict):
+    condition: SomeSubstitutionsType
+    if_value: SomeSubstitutionsType
+    else_value: NotRequired[SomeSubstitutionsType]
 
 
 @expose_substitution('if')
@@ -76,11 +87,15 @@ class IfElseSubstitution(Substitution):
         self._else_value = normalize_to_list_of_substitutions(else_value)
 
     @classmethod
-    def parse(cls, data: Sequence[SomeSubstitutionsType]):
+    def parse(cls, data: Sequence[SomeSubstitutionsType]
+              ) -> Tuple[Type['IfElseSubstitution'], IfElseSubstitutionParsedDict]:
         """Parse `IfElseSubstitution` substitution."""
         if len(data) < 2 or len(data) > 3:
             raise TypeError('if substitution expects from 2 or 3 arguments')
-        kwargs = {'condition': data[0], 'if_value': data[1]}
+        kwargs = IfElseSubstitutionParsedDict(
+            condition=data[0],
+            if_value=data[1]
+        )
         if len(data) == 3:
             kwargs['else_value'] = data[2]
         return cls, kwargs

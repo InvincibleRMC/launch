@@ -17,12 +17,19 @@
 from typing import List
 from typing import Sequence
 from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import TypedDict
 
 from .substitution_failure import SubstitutionFailure
 from ..frontend import expose_substitution
 from ..launch_context import LaunchContext
 from ..some_substitutions_type import SomeSubstitutionsType
 from ..substitution import Substitution
+
+
+class FileContentParsedDict(TypedDict):
+    path: SomeSubstitutionsType
 
 
 @expose_substitution('file-content')
@@ -41,11 +48,12 @@ class FileContent(Substitution):
         self.__path = normalize_to_list_of_substitutions(path)
 
     @classmethod
-    def parse(cls, data: Sequence[SomeSubstitutionsType]):
+    def parse(cls, data: Sequence[SomeSubstitutionsType]
+              ) -> Tuple[Type['FileContent'], FileContentParsedDict]:
         """Parse `FileContent` substitution."""
         if not data or len(data) != 1:
             raise AttributeError('file content substitutions expect 1 argument')
-        kwargs = {'path': data[0]}
+        kwargs: FileContentParsedDict = {'path': data[0]}
         return cls, kwargs
 
     @property

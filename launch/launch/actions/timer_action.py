@@ -24,14 +24,18 @@ from typing import List
 from typing import Optional
 from typing import Text
 from typing import Tuple
+from typing import Type
 from typing import Union
 import warnings
 
 import launch.logging
+from typing_extensions import NotRequired
+from typing_extensions import Self
 
 from .opaque_function import OpaqueFunction
 
 from ..action import Action
+from ..action import ActionParsedDict
 from ..event_handler import EventHandler
 from ..events import Shutdown
 from ..events import TimerEvent
@@ -48,6 +52,12 @@ from ..utilities import is_a_subclass
 from ..utilities import type_utils
 
 
+class TimerActionParsedDict(ActionParsedDict):
+    period: type_utils.NormalizedValueType
+    actions: List[Action]
+    cancel_on_shutdown: NotRequired[type_utils.NormalizedValueType]
+
+
 @expose_action('timer')
 class TimerAction(Action):
     """
@@ -62,7 +72,7 @@ class TimerAction(Action):
         period: Union[float, SomeSubstitutionsType],
         actions: Iterable[LaunchDescriptionEntity],
         cancel_on_shutdown: Union[bool, SomeSubstitutionsType] = True,
-        **kwargs
+        **kwargs: Any
     ) -> None:
         """
         Create a TimerAction.
@@ -84,9 +94,9 @@ class TimerAction(Action):
         self.__period = type_utils.normalize_typed_substitution(period, float)
         self.__actions = actions
         self.__context_locals: Dict[Text, Any] = {}
-        self._completed_future: Optional[asyncio.Future] = None
+        self._completed_future: Optional[asyncio.Future[None]] = None
         self.__canceled = False
-        self._canceled_future: Optional[asyncio.Future] = None
+        self._canceled_future: Optional[asyncio.Future[bool]] = None
         self.__cancel_on_shutdown = type_utils.normalize_typed_substitution(
             cancel_on_shutdown, bool)
         self.__logger = launch.logging.get_logger(__name__)
@@ -105,24 +115,27 @@ class TimerAction(Action):
         cls,
         entity: Entity,
         parser: Parser,
-    ):
+    ) -> Tuple[Type[Self], TimerActionParsedDict]:
         """Return the `Timer` action and kwargs for constructing it."""
         _, kwargs = super().parse(entity, parser)
-        kwargs['period'] = parser.parse_if_substitutions(
-            entity.get_attr('period', data_type=float, can_be_str=True))
-        kwargs['actions'] = [parser.parse_action(child) for child in entity.children]
+        new_kwargs = TimerActionParsedDict(
+            period=parser.parse_if_substitutions(
+                entity.get_attr('period', data_type=float, can_be_str=True)),
+            actions=[parser.parse_action(child) for child in entity.children],
+            **kwargs
+        )
         cancel_on_shutdown = entity.get_attr(
             'cancel_on_shutdown', optional=True, data_type=bool, can_be_str=True)
         if cancel_on_shutdown is not None:
-            kwargs['cancel_on_shutdown'] = parser.parse_if_substitutions(cancel_on_shutdown)
-        return cls, kwargs
+            new_kwargs['cancel_on_shutdown'] = parser.parse_if_substitutions(cancel_on_shutdown)
+        return cls, new_kwargs
 
     @property
-    def period(self):
+    def period(self) -> type_utils.NormalizedValueType:
         return self.__period
 
     @property
-    def actions(self):
+    def actions(self) -> Iterable[LaunchDescriptionEntity]:
         return self.__actions
 
     def describe(self) -> Text:

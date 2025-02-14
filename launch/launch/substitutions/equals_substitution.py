@@ -23,6 +23,9 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import TypedDict
 from typing import Union
 
 from ..frontend import expose_substitution
@@ -30,7 +33,8 @@ from ..launch_context import LaunchContext
 from ..some_substitutions_type import SomeSubstitutionsType
 from ..substitution import Substitution
 from ..utilities import normalize_to_list_of_substitutions
-from ..utilities.type_utils import is_substitution, perform_substitutions
+from ..utilities.perform_substitutions_impl import perform_substitutions
+from ..utilities.type_utils import is_substitution
 
 
 def _str_is_bool(input_str: Text) -> bool:
@@ -48,6 +52,11 @@ def _str_is_float(input_str: Text) -> bool:
         return True
     except ValueError:
         return False
+
+
+class EqualsSubstitutionParsedDict(TypedDict):
+    left: SomeSubstitutionsType
+    right: SomeSubstitutionsType
 
 
 @expose_substitution('equals')
@@ -94,7 +103,8 @@ class EqualsSubstitution(Substitution):
                 )
 
     @classmethod
-    def parse(cls, data: Sequence[SomeSubstitutionsType]):
+    def parse(cls, data: Sequence[SomeSubstitutionsType]
+              ) -> Tuple[Type['EqualsSubstitution'], EqualsSubstitutionParsedDict]:
         """Parse `EqualsSubstitution` substitution."""
         if len(data) != 2:
             raise TypeError('and substitution expects 2 arguments')

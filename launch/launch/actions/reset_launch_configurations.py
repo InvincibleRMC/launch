@@ -14,18 +14,29 @@
 
 """Module for the ResetLaunchConfigurations action."""
 
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
+from typing import Type
+
+from typing_extensions import Self
 
 from ..action import Action
+from ..action import ActionParsedDict
 from ..frontend import Entity
 from ..frontend import expose_action
 from ..frontend import Parser
 from ..launch_context import LaunchContext
 from ..some_substitutions_type import SomeSubstitutionsType
+from ..substitution import Substitution
 from ..utilities import normalize_to_list_of_substitutions
 from ..utilities import perform_substitutions
+
+
+class ResetLaunchConfigurationsParsedDict(ActionParsedDict, total=False):
+    launch_configurations: Dict[Tuple[Substitution, ...], List[Substitution]]
 
 
 @expose_action('reset')
@@ -52,27 +63,29 @@ class ResetLaunchConfigurations(Action):
     def __init__(
         self,
         launch_configurations: Optional[Dict[SomeSubstitutionsType, SomeSubstitutionsType]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> None:
         """Create an ResetLaunchConfigurations action."""
         super().__init__(**kwargs)
         self.__launch_configurations = launch_configurations
 
     @classmethod
-    def parse(cls, entity: Entity, parser: Parser):
+    def parse(cls, entity: Entity, parser: Parser
+              ) -> Tuple[Type[Self], ResetLaunchConfigurationsParsedDict]:
         """Return `ResetLaunchConfigurations` action and kwargs for constructing it."""
         _, kwargs = super().parse(entity, parser)
+        new_kwargs = ResetLaunchConfigurationsParsedDict(**kwargs)
         keeps = entity.get_attr('keep', data_type=List[Entity], optional=True)
         if keeps is not None:
-            kwargs['launch_configurations'] = {
+            new_kwargs['launch_configurations'] = {
                     tuple(parser.parse_substitution(e.get_attr('name'))):
                     parser.parse_substitution(e.get_attr('value')) for e in keeps
             }
             for e in keeps:
                 e.assert_entity_completely_parsed()
-        return cls, kwargs
+        return cls, new_kwargs
 
-    def execute(self, context: LaunchContext):
+    def execute(self, context: LaunchContext) -> None:
         """Execute the action."""
         if self.__launch_configurations is None:
             context.launch_configurations.clear()

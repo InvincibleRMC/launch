@@ -17,6 +17,7 @@
 from typing import cast
 from typing import Iterable
 from typing import List
+from typing import Union
 
 from .class_tools_impl import is_a_subclass
 from ..some_substitutions_type import SomeSubstitutionsType
@@ -28,7 +29,7 @@ def normalize_to_list_of_substitutions(subs: SomeSubstitutionsType) -> List[Subs
     # Avoid recursive import
     from ..substitutions import TextSubstitution
 
-    def normalize(x):
+    def normalize(x: Union[Substitution, str]) -> Substitution:
         if isinstance(x, Substitution):
             return x
         if isinstance(x, str):

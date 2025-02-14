@@ -125,7 +125,7 @@ class LaunchService:
         """
         self.emit_event(IncludeLaunchDescription(launch_description))
 
-    def _prune_and_count_entity_future_pairs(self):
+    def _prune_and_count_entity_future_pairs(self) -> int:
         needs_prune = False
         for pair in self._entity_future_pairs:
             if pair[1].done():
@@ -135,7 +135,7 @@ class LaunchService:
                 [pair for pair in self._entity_future_pairs if not pair[1].done()]
         return len(self._entity_future_pairs)
 
-    def _prune_and_count_context_completion_futures(self):
+    def _prune_and_count_context_completion_futures(self) -> int:
         needs_prune = False
         for future in self.__context._completion_futures:
             if future.done():
@@ -145,7 +145,7 @@ class LaunchService:
                 [f for f in self.__context._completion_futures if not f.done()]
         return len(self.__context._completion_futures)
 
-    def _is_idle(self):
+    def _is_idle(self) -> bool:
         number_of_entity_future_pairs = self._prune_and_count_entity_future_pairs()
         number_of_entity_future_pairs += self._prune_and_count_context_completion_futures()
         return number_of_entity_future_pairs == 0 and self.__context._event_queue.empty()
@@ -237,9 +237,9 @@ class LaunchService:
                     "processing event: '{}' ✓ '{}'".format(event, event_handler))
                 self.__context._push_locals()
                 entities = event_handler.handle(event, self.__context)
-                entities = \
+                entities_iterable = \
                     entities if isinstance(entities, collections.abc.Iterable) else (entities,)
-                for entity in [e for e in entities if e is not None]:
+                for entity in [e for e in entities_iterable if e is not None]:
                     from .utilities import is_a_subclass
                     if not is_a_subclass(entity, LaunchDescriptionEntity):
                         raise RuntimeError(

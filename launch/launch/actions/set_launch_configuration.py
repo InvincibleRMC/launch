@@ -13,10 +13,15 @@
 # limitations under the License.
 
 """Module for the SetLaunchConfiguration action."""
-
+from typing import Any
 from typing import List
+from typing import Tuple
+from typing import Type
+
+from typing_extensions import Self
 
 from ..action import Action
+from ..action import ActionParsedDict
 from ..frontend import Entity
 from ..frontend import expose_action
 from ..frontend import Parser
@@ -25,6 +30,11 @@ from ..some_substitutions_type import SomeSubstitutionsType
 from ..substitution import Substitution
 from ..utilities import normalize_to_list_of_substitutions
 from ..utilities import perform_substitutions
+
+
+class SetLaunchConfigurationParsedDict(ActionParsedDict):
+    name: List[Substitution]
+    value: List[Substitution]
 
 
 @expose_action('let')
@@ -41,7 +51,7 @@ class SetLaunchConfiguration(Action):
         self,
         name: SomeSubstitutionsType,
         value: SomeSubstitutionsType,
-        **kwargs
+        **kwargs: Any
     ) -> None:
         """Create a SetLaunchConfiguration action."""
         super().__init__(**kwargs)
@@ -49,14 +59,18 @@ class SetLaunchConfiguration(Action):
         self.__value = normalize_to_list_of_substitutions(value)
 
     @classmethod
-    def parse(cls, entity: Entity, parser: Parser):
+    def parse(cls, entity: Entity, parser: Parser
+              ) -> Tuple[Type[Self], SetLaunchConfigurationParsedDict]:
         """Return `SetLaunchConfiguration` action and kwargs for constructing it."""
         name = parser.parse_substitution(entity.get_attr('name'))
         value = parser.parse_substitution(entity.get_attr('value'))
         _, kwargs = super().parse(entity, parser)
-        kwargs['name'] = name
-        kwargs['value'] = value
-        return cls, kwargs
+        new_kwargs = SetLaunchConfigurationParsedDict(
+            name=name,
+            value=value,
+            **kwargs
+        )
+        return cls, new_kwargs
 
     @property
     def name(self) -> List[Substitution]:
@@ -68,7 +82,7 @@ class SetLaunchConfiguration(Action):
         """Getter for self.__value."""
         return self.__value
 
-    def execute(self, context: LaunchContext):
+    def execute(self, context: LaunchContext) -> None:
         """Execute the action."""
         context.launch_configurations[perform_substitutions(context, self.name)] = \
             perform_substitutions(context, self.value)

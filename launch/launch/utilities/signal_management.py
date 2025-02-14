@@ -23,6 +23,7 @@ import socket
 import threading
 
 from typing import Callable
+from typing import Dict
 from typing import Optional
 from typing import Tuple  # noqa: F401
 from typing import Union
@@ -76,7 +77,7 @@ class AsyncSafeSignalManager:
         self.__parent: Optional[AsyncSafeSignalManager] = None
         self.__loop: asyncio.AbstractEventLoop = loop
         self.__background_loop: Optional[asyncio.AbstractEventLoop] = None
-        self.__handlers: dict = {}
+        self.__handlers: Dict[int, Callable[[int], None]] = {}
         self.__prev_wakeup_handle: Union[int, socket.socket] = -1
         self.__wsock: Optional[socket.socket] = None
         self.__rsock: Optional[socket.socket] = None
@@ -107,7 +108,7 @@ class AsyncSafeSignalManager:
         self.__chain()
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
         try:
             try:
                 self.__uninstall_signal_writers()
@@ -115,12 +116,15 @@ class AsyncSafeSignalManager:
                 self.__remove_signal_readers()
         finally:
             self.__unchain()
-            self.__close_sockets()
+            if self.__close_sockets:
+                self.__close_sockets()
             self.__rsock = None
             self.__wsock = None
             self.__close_sockets = None
 
-    def __add_signal_readers(self):
+    def __add_signal_readers(self) -> None:
+        if self.__rsock is None:
+            raise RuntimeError('AsnycSafeSignalManager has not been initliazed.')
         try:
             self.__loop.add_reader(self.__rsock.fileno(), self.__handle_signal)
         except NotImplementedError:
@@ -133,24 +137,29 @@ class AsyncSafeSignalManager:
                 self.__loop.call_soon_threadsafe,
                 self.__handle_signal)
 
-            def run_background_loop():
+            def run_background_loop() -> None:
                 asyncio.set_event_loop(self.__background_loop)
+                if self.__background_loop is None:
+                    raise RuntimeError('AsnycSafeSignalManager has not been initliazed.')
                 self.__background_loop.run_forever()
 
             self.__background_thread = threading.Thread(
                 target=run_background_loop, daemon=True)
             self.__background_thread.start()
 
-    def __remove_signal_readers(self):
+    def __remove_signal_readers(self) -> None:
         if self.__background_loop:
             self.__background_loop.call_soon_threadsafe(self.__background_loop.stop)
             self.__background_thread.join()
             self.__background_loop.close()
             self.__background_loop = None
         else:
-            self.__loop.remove_reader(self.__rsock.fileno())
+            if self.__rsock:
+                self.__loop.remove_reader(self.__rsock.fileno())
 
-    def __install_signal_writers(self):
+    def __install_signal_writers(self) -> None:
+        if self.__wsock is None:
+            raise RuntimeError('AsnycSafeSignalManager has not been initliazed.')
         prev_wakeup_handle = self.__set_wakeup_fd(self.__wsock.fileno())
         try:
             self.__chain_wakeup_handle(prev_wakeup_handle)
@@ -159,10 +168,10 @@ class AsyncSafeSignalManager:
             assert self.__wsock.fileno() == own_wakeup_handle
             raise
 
-    def __uninstall_signal_writers(self):
+    def __uninstall_signal_writers(self) -> None:
         prev_wakeup_handle = self.__chain_wakeup_handle(-1)
         own_wakeup_handle = self.__set_wakeup_fd(prev_wakeup_handle)
-        assert self.__wsock.fileno() == own_wakeup_handle
+        assert self.__wsock and self.__wsock.fileno() == own_wakeup_handle
 
     def __chain(self):
         self.__parent = AsyncSafeSignalManager.__current

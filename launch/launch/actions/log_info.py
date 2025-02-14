@@ -14,11 +14,17 @@
 
 """Module for the LogInfo action."""
 
+from typing import Any
 from typing import List
+from typing import Tuple
+from typing import Type
+
 
 import launch.logging
+from typing_extensions import Self
 
 from ..action import Action
+from ..action import ActionParsedDict
 from ..frontend import Entity
 from ..frontend import expose_action
 from ..frontend import Parser  # noqa: F401
@@ -28,11 +34,15 @@ from ..substitution import Substitution
 from ..utilities import normalize_to_list_of_substitutions
 
 
+class LogInfoParsedDict(ActionParsedDict, total=False):
+    msg: List[Substitution]
+
+
 @expose_action('log')
 class LogInfo(Action):
     """Action that logs a message when executed."""
 
-    def __init__(self, *, msg: SomeSubstitutionsType, **kwargs):
+    def __init__(self, *, msg: SomeSubstitutionsType, **kwargs: Any):
         """Create a LogInfo action."""
         super().__init__(**kwargs)
 
@@ -44,11 +54,14 @@ class LogInfo(Action):
         cls,
         entity: Entity,
         parser: 'Parser'
-    ):
+    ) -> Tuple[Type[Self], LogInfoParsedDict]:
         """Parse `log` tag."""
         _, kwargs = super().parse(entity, parser)
-        kwargs['msg'] = parser.parse_substitution(entity.get_attr('message'))
-        return cls, kwargs
+        new_kwargs = LogInfoParsedDict(
+            msg=parser.parse_substitution(entity.get_attr('message')),
+            **kwargs
+        )
+        return cls, new_kwargs
 
     @property
     def msg(self) -> List[Substitution]:

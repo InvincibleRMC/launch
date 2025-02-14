@@ -14,13 +14,19 @@
 
 """Module for the DeclareLaunchArgument action."""
 
+from typing import Any
 from typing import List
 from typing import Optional
 from typing import Text
+from typing import Tuple
+from typing import Type
 
 import launch.logging
+from typing_extensions import NotRequired
+from typing_extensions import Self
 
 from ..action import Action
+from ..action import ActionParsedDict
 from ..frontend import Entity
 from ..frontend import expose_action
 from ..frontend import Parser  # noqa: F401
@@ -29,6 +35,13 @@ from ..some_substitutions_type import SomeSubstitutionsType
 from ..substitution import Substitution
 from ..utilities import normalize_to_list_of_substitutions
 from ..utilities import perform_substitutions
+
+
+class DeclareLaunchArgumentParsedDict(ActionParsedDict):
+    name: Text
+    default_value: NotRequired[List[Substitution]]
+    description: NotRequired[Text]
+    choices: NotRequired[List[Text]]
 
 
 @expose_action('arg')
@@ -109,7 +122,7 @@ class DeclareLaunchArgument(Action):
         default_value: Optional[SomeSubstitutionsType] = None,
         description: Optional[Text] = None,
         choices: Optional[List[Text]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> None:
         """Create a DeclareLaunchArgument action."""
         super().__init__(**kwargs)
@@ -163,22 +176,26 @@ class DeclareLaunchArgument(Action):
         cls,
         entity: Entity,
         parser: 'Parser'
-    ):
+    ) -> Tuple[Type[Self], DeclareLaunchArgumentParsedDict]:
         """Parse `arg` tag."""
         _, kwargs = super().parse(entity, parser)
-        kwargs['name'] = parser.escape_characters(entity.get_attr('name'))
+
+        new_kwargs = DeclareLaunchArgumentParsedDict(
+            name=parser.escape_characters(entity.get_attr('name')),
+            **kwargs
+        )
         default_value = entity.get_attr('default', optional=True)
         if default_value is not None:
-            kwargs['default_value'] = parser.parse_substitution(default_value)
+            new_kwargs['default_value'] = parser.parse_substitution(default_value)
         description = entity.get_attr('description', optional=True)
         if description is not None:
-            kwargs['description'] = parser.escape_characters(description)
+            new_kwargs['description'] = parser.escape_characters(description)
         choices = entity.get_attr('choice', data_type=List[Entity], optional=True)
         if choices is not None:
-            kwargs['choices'] = [
+            new_kwargs['choices'] = [
                 parser.escape_characters(choice.get_attr('value')) for choice in choices
             ]
-        return cls, kwargs
+        return cls, new_kwargs
 
     @property
     def name(self) -> Text:
@@ -200,7 +217,7 @@ class DeclareLaunchArgument(Action):
         """Getter for self.__choices."""
         return self.__choices
 
-    def execute(self, context: LaunchContext):
+    def execute(self, context: LaunchContext) -> None:
         """Execute the action."""
         if self.name not in context.launch_configurations:
             if self.default_value is None:

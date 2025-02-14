@@ -20,9 +20,15 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Text
+from typing import Tuple
+from typing import Type
+
+from typing_extensions import NotRequired
+from typing_extensions import Self
 
 from .execute_local import ExecuteLocal
 from .shutdown_action import Shutdown
+from ..action import ActionParsedDict
 from ..descriptions import Executable
 from ..frontend import Entity
 from ..frontend import expose_action
@@ -31,6 +37,23 @@ from ..some_substitutions_type import SomeSubstitutionsType
 
 from ..substitution import Substitution
 from ..substitutions import TextSubstitution
+
+
+class ExecuteProcessParsedDict(ActionParsedDict):
+    cmd: NotRequired[List[SomeSubstitutionsType]]
+    cwd: NotRequired[List[Substitution]]
+    name: NotRequired[List[Substitution]]
+    on_exit: NotRequired[List[Shutdown]]
+    prefix: NotRequired[List[Substitution]]
+    output: NotRequired[List[Substitution]]
+    respawn: NotRequired[List[Substitution]]
+    respawn_max_retries: NotRequired[int]
+    respawn_delay: NotRequired[float]
+    sigkill_timeout: NotRequired[str]
+    sigterm_timeout: NotRequired[str]
+    shell: NotRequired[bool]
+    emulate_tty: NotRequired[bool]
+    additional_env: NotRequired[Dict[Tuple[Substitution, ...], List[Substitution]]]
 
 
 @expose_action('executable')
@@ -253,10 +276,10 @@ class ExecuteProcess(ExecuteLocal):
            list again as a `TextSubstitution`.
         :returns: a list of command line arguments.
         """
-        result_args = []
+        result_args: List[SomeSubstitutionsType] = []
         arg: List[Substitution] = []
 
-        def _append_arg():
+        def _append_arg() -> None:
             nonlocal arg
             result_args.append(arg)
             arg = []
@@ -306,7 +329,7 @@ class ExecuteProcess(ExecuteLocal):
         entity: Entity,
         parser: Parser,
         ignore: Optional[List[str]] = None
-    ):
+    ) -> Tuple[Type[Self], ExecuteProcessParsedDict]:
         """
         Return the `ExecuteProcess` action and kwargs for constructing it.
 
@@ -314,28 +337,29 @@ class ExecuteProcess(ExecuteLocal):
             Intended for code reuse in derived classes (e.g.: launch_ros.actions.Node).
         """
         _, kwargs = super().parse(entity, parser)
+        new_kwargs = ExecuteProcessParsedDict(**kwargs)
 
         if ignore is None:
             ignore = []
 
         if 'cmd' not in ignore:
-            kwargs['cmd'] = cls._parse_cmdline(entity.get_attr('cmd'), parser)
+            new_kwargs['cmd'] = cls._parse_cmdline(entity.get_attr('cmd'), parser)
 
         if 'cwd' not in ignore:
             cwd = entity.get_attr('cwd', optional=True)
             if cwd is not None:
-                kwargs['cwd'] = parser.parse_substitution(cwd)
+                new_kwargs['cwd'] = parser.parse_substitution(cwd)
 
         if 'name' not in ignore:
             name = entity.get_attr('name', optional=True)
             if name is not None:
-                kwargs['name'] = parser.parse_substitution(name)
+                new_kwargs['name'] = parser.parse_substitution(name)
 
         if 'on_exit' not in ignore:
             on_exit = entity.get_attr('on_exit', optional=True)
             if on_exit is not None:
                 if on_exit == 'shutdown':
-                    kwargs['on_exit'] = [Shutdown()]
+                    new_kwargs['on_exit'] = [Shutdown()]
                 else:
                     raise ValueError(
                         'Attribute on_exit of Entity node expected to be shutdown but got `{}`'
@@ -344,23 +368,23 @@ class ExecuteProcess(ExecuteLocal):
         if 'prefix' not in ignore:
             prefix = entity.get_attr('launch-prefix', optional=True)
             if prefix is not None:
-                kwargs['prefix'] = parser.parse_substitution(prefix)
+                new_kwargs['prefix'] = parser.parse_substitution(prefix)
 
         if 'output' not in ignore:
             output = entity.get_attr('output', optional=True)
             if output is not None:
-                kwargs['output'] = parser.parse_substitution(output)
+                new_kwargs['output'] = parser.parse_substitution(output)
 
         if 'respawn' not in ignore:
             respawn = entity.get_attr('respawn', optional=True)
             if respawn is not None:
-                kwargs['respawn'] = parser.parse_substitution(respawn)
+                new_kwargs['respawn'] = parser.parse_substitution(respawn)
 
         if 'respawn_max_retries' not in ignore:
             respawn_max_retries = entity.get_attr('respawn_max_retries', data_type=int,
                                                   optional=True)
             if respawn_max_retries is not None:
-                kwargs['respawn_max_retries'] = respawn_max_retries
+                new_kwargs['respawn_max_retries'] = respawn_max_retries
 
         if 'respawn_delay' not in ignore:
             respawn_delay = entity.get_attr('respawn_delay', data_type=float, optional=True)
@@ -370,7 +394,7 @@ class ExecuteProcess(ExecuteLocal):
                         'Attribute respawn_delay of Entity node expected to be '
                         'a non-negative value but got `{}`'.format(respawn_delay)
                     )
-                kwargs['respawn_delay'] = respawn_delay
+                new_kwargs['respawn_delay'] = respawn_delay
 
         if 'sigkill_timeout' not in ignore:
             sigkill_timeout = entity.get_attr('sigkill_timeout', data_type=float, optional=True)
@@ -380,7 +404,7 @@ class ExecuteProcess(ExecuteLocal):
                         'Attribute sigkill_timeout of Entity node expected to be '
                         'a non-negative value but got `{}`'.format(sigkill_timeout)
                     )
-                kwargs['sigkill_timeout'] = str(sigkill_timeout)
+                new_kwargs['sigkill_timeout'] = str(sigkill_timeout)
 
         if 'sigterm_timeout' not in ignore:
             sigterm_timeout = entity.get_attr('sigterm_timeout', data_type=float, optional=True)
@@ -390,17 +414,17 @@ class ExecuteProcess(ExecuteLocal):
                         'Attribute sigterm_timeout of Entity node expected to be '
                         'a non-negative value but got `{}`'.format(sigterm_timeout)
                     )
-                kwargs['sigterm_timeout'] = str(sigterm_timeout)
+                new_kwargs['sigterm_timeout'] = str(sigterm_timeout)
 
         if 'shell' not in ignore:
             shell = entity.get_attr('shell', data_type=bool, optional=True)
             if shell is not None:
-                kwargs['shell'] = shell
+                new_kwargs['shell'] = shell
 
         if 'emulate_tty' not in ignore:
             emulate_tty = entity.get_attr('emulate_tty', data_type=bool, optional=True)
             if emulate_tty is not None:
-                kwargs['emulate_tty'] = emulate_tty
+                new_kwargs['emulate_tty'] = emulate_tty
 
         if 'additional_env' not in ignore:
             # Conditions won't be allowed in the `env` tag.
@@ -408,13 +432,13 @@ class ExecuteProcess(ExecuteLocal):
             # `unset_enviroment_variable` actions should be used.
             env = entity.get_attr('env', data_type=List[Entity], optional=True)
             if env is not None:
-                kwargs['additional_env'] = {
+                new_kwargs['additional_env'] = {
                     tuple(parser.parse_substitution(e.get_attr('name'))):
                     parser.parse_substitution(e.get_attr('value')) for e in env
                 }
                 for e in env:
                     e.assert_entity_completely_parsed()
-        return cls, kwargs
+        return cls, new_kwargs
 
     @property
     def name(self):
