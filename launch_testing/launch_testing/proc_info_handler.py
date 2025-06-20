@@ -22,6 +22,11 @@ further reference.
 
 
 import threading
+from typing import Dict
+from typing import Iterator
+from typing import KeysView
+from typing import List
+from typing import Union
 from launch.actions import ExecuteProcess  # noqa
 from launch.events.process import ProcessExited
 
@@ -32,24 +37,24 @@ from .util import resolveProcesses
 class ProcInfoHandler:
     """Captures exit codes from processes when they terminate."""
 
-    def __init__(self):
-        self._proc_info = {}
+    def __init__(self) -> None:
+        self._proc_info: Dict[ExecuteProcess, ProcessExited] = {}
 
-    def append(self, process_info):
+    def append(self, process_info: ProcessExited):
         self._proc_info[process_info.action] = process_info
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ProcessExited]:
         return self._proc_info.values().__iter__()
 
-    def processes(self):
+    def processes(self) -> KeysView[ExecuteProcess]:
         """Get the ExecuteProcess launch actions of all recorded processes."""
         return self._proc_info.keys()
 
-    def process_names(self):
+    def process_names(self) -> List[str]:
         """Get the name of all recorded processes."""
-        return [x.process_details['name'] for x in self._proc_info.keys()]
+        return [x.process_details['name'] for x in self._proc_info.keys()]  # type: ignore
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[str, ExecuteProcess]) -> ProcessExited:
         """
         Get the ProcessExited event for the specified process.
 
@@ -77,19 +82,19 @@ class ActiveProcInfoHandler:
         self._proc_info_handler = ProcInfoHandler()
 
     @property
-    def proc_event(self):
+    def proc_event(self) -> threading.Condition:
         return self._sync_lock
 
-    def append(self, process_info):
+    def append(self, process_info: ProcessExited) -> None:
         with self._sync_lock:
             self._proc_info_handler.append(process_info)
             self._sync_lock.notify()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ProcessExited]:
         with self._sync_lock:
             return self._proc_info_handler.__iter__()
 
-    def processes(self):
+    def processes(self) -> List[ExecuteProcess]:
         """
         Get the ExecuteProcess launch actions of all recorded processes.
 
@@ -98,7 +103,7 @@ class ActiveProcInfoHandler:
         with self._sync_lock:
             return list(self._proc_info_handler.processes())
 
-    def process_names(self):
+    def process_names(self) -> List[str]:
         """
         Get the name of all recorded processes.
 
@@ -107,7 +112,7 @@ class ActiveProcInfoHandler:
         with self._sync_lock:
             return list(self._proc_info_handler.process_names())
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[str, ExecuteProcess]) -> ProcessExited:
         with self._sync_lock:
             return self._proc_info_handler[key]
 

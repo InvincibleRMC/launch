@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import OrderedDict
+from typing import ItemsView
 from typing import List
+from typing import OrderedDict
 from typing import Text
-from typing import Tuple
 
 
 # This was copy/pasted from ros2launch.api to avoid a rclpy dependency in launch_testing
-def parse_launch_arguments(launch_arguments: List[Text]) -> List[Tuple[Text, Text]]:
+def parse_launch_arguments(launch_arguments: List[Text]) -> ItemsView[Text, Text]:
     """Parse the given launch arguments from the command line, into list of tuples for launch."""
-    parsed_launch_arguments = OrderedDict()  # type: ignore
+    parsed_launch_arguments: OrderedDict[Text, Text] = OrderedDict()  # type: ignore
     for argument in launch_arguments:
         count = argument.count(':=')
         if count == 0 or argument.startswith(':=') or (count == 1 and argument.endswith(':=')):

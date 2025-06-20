@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import logging
+from typing import Callable
+from typing import List
 
 from launch.action import Action
 from launch.launch_context import LaunchContext
@@ -23,11 +25,11 @@ _logger_ = logging.getLogger(__name__)
 class ReadyToTest(Action):
     """Action that signals to launch_test that it's safe to start the tests."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self._cb_list = []
+        self._cb_list: List[Callable[[], None]] = []
 
-    def _add_callback(self, callback):
+    def _add_callback(self, callback: Callable[[], None]) -> None:
         self._cb_list.append(callback)
 
     def execute(self, context: LaunchContext) -> None:

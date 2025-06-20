@@ -16,6 +16,9 @@ import functools
 import inspect
 import itertools
 import os
+from typing import Optional
+from typing import Type
+from typing import Union
 import unittest
 import warnings
 
@@ -24,8 +27,9 @@ from .actions import ReadyToTest
 
 # Patch up the warnings module to streamline the warning messages.  See
 # https://docs.python.org/3/library/warnings.html#warnings.showwarning
-def slim_formatwarning(msg, *args, **kwargs):
-    return 'Warning: ' + str(msg) + os.linesep
+def slim_formatwarning(message: Union[Warning, str], category: Type[Warning], filename: str,
+                       lineno: int, line: Optional[str] = None) -> str:
+    return 'Warning: ' + str(message) + os.linesep
 
 
 warnings.formatwarning = slim_formatwarning

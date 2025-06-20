@@ -19,6 +19,7 @@ from typing import Tuple
 
 from launch.actions import ExecuteProcess
 from launch.event_handlers import OnProcessIO
+from launch.events.process import ProcessIO
 from launch.some_entities_type import SomeEntitiesType
 
 
@@ -36,19 +37,20 @@ class StdoutReadyListener(OnProcessIO):
         *,
         target_action: Optional[ExecuteProcess] = None,
         ready_txt: Text,
-        actions: [SomeEntitiesType]
+        actions: List[SomeEntitiesType]
     ):
         self.__ready_txt = ready_txt
         self.__actions = actions
 
         super().__init__(
             target_action=target_action,
-            on_stdout=self.__on_stdout
+            on_stdout=self.__on_stdout  # type: ignore[arg-type]
         )
 
-    def __on_stdout(self, process_io):
+    def __on_stdout(self, process_io: ProcessIO) -> Optional[List[SomeEntitiesType]]:
         if self.__ready_txt in process_io.text.decode():
             return self.__actions
+        return None
 
     def describe(self) -> Tuple[Text, List[SomeEntitiesType]]:
         """Return the description list with 0 as a string, and then LaunchDescriptionEntity's."""

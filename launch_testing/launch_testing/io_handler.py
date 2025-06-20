@@ -22,6 +22,15 @@ further reference.
 
 
 import threading
+from typing import Dict
+from typing import Iterator
+from typing import KeysView
+from typing import List
+from typing import Union
+
+
+from launch.actions import ExecuteProcess
+from launch.events.process import ProcessIO
 
 from .asserts.assert_output import assertInStream
 from .util import NoMatchingProcessException
@@ -35,24 +44,25 @@ class IoHandler:
     This class provides helper methods to enumerate the captured IO by individual processes
     """
 
-    def __init__(self):
-        self._sequence_list = []  # A time-ordered list of IO from all processes
-        self._process_name_dict = {}  # A dict of time ordered lists of IO key'd by the process
+    def __init__(self) -> None:
+        self._sequence_list: List[ProcessIO] = []  # A time-ordered list of IO from all processes
+        self._process_name_dict: Dict[str, List[ProcessIO]] = \
+            {}  # A dict of time ordered lists of IO key'd by the process
 
-    def track(self, process_name):
+    def track(self, process_name: str) -> None:
         if process_name not in self._process_name_dict:
             self._process_name_dict[process_name] = []
 
-    def append(self, process_io):
+    def append(self, process_io: ProcessIO) -> None:
         self._sequence_list.append(process_io)
         if process_io.process_name not in self._process_name_dict:
             self._process_name_dict[process_io.process_name] = []
         self._process_name_dict[process_io.process_name].append(process_io)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ProcessIO]:
         return self._sequence_list.__iter__()
 
-    def processes(self):
+    def processes(self) -> List[ExecuteProcess]:
         """
         Get an iterable of unique launch.events.process.RunningProcessEvent objects.
 
@@ -60,7 +70,7 @@ class IoHandler:
         """
         return [val[0].action for val in self._process_name_dict.values() if len(val) > 0]
 
-    def process_names(self):
+    def process_names(self) -> KeysView[str]:
         """
         Get the name of all unique processes that generated IO.
 
@@ -68,7 +78,7 @@ class IoHandler:
         """
         return self._process_name_dict.keys()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[str, ExecuteProcess]) -> List[ProcessIO]:
         """
         Get the output for a given process or process name.
 
@@ -96,24 +106,24 @@ class ActiveIoHandler:
         self._io_handler = IoHandler()
 
     @property
-    def io_event(self):
+    def io_event(self) -> threading.Condition:
         return self._sync_lock
 
-    def track(self, process_name):
+    def track(self, process_name: str) -> None:
         with self._sync_lock:
             self._io_handler.track(process_name)
             self._sync_lock.notify()
 
-    def append(self, process_io):
+    def append(self, process_io: ProcessIO) -> None:
         with self._sync_lock:
             self._io_handler.append(process_io)
             self._sync_lock.notify()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ProcessIO]:
         with self._sync_lock:
             return list(self._io_handler).__iter__()
 
-    def processes(self):
+    def processes(self) -> List[ExecuteProcess]:
         """
         Get an iterable of unique launch.events.process.RunningProcessEvent objects.
 
@@ -122,7 +132,7 @@ class ActiveIoHandler:
         with self._sync_lock:
             return list(self._io_handler.processes())
 
-    def process_names(self):
+    def process_names(self) -> List[str]:
         """
         Get the name of all unique processes that generated IO.
 
@@ -131,7 +141,7 @@ class ActiveIoHandler:
         with self._sync_lock:
             return list(self._io_handler.process_names())
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[str, ExecuteProcess]) -> List[ProcessIO]:
         """
         Get the output for a given process or process name.
 
@@ -141,7 +151,7 @@ class ActiveIoHandler:
         with self._sync_lock:
             return self._io_handler[key]
 
-    def assertWaitFor(self, *args, **kwargs):
+    def assertWaitFor(self, *args, **kwargs) -> None:
         success = self.waitFor(*args, **kwargs)
         assert success, 'Waiting for output timed out'
 

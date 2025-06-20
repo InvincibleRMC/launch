@@ -49,7 +49,7 @@ def build_line_match(expected_lines, *, strict=False):
         return _match
 
     if hasattr(expected_lines, 'match'):
-        def _match(actual_lines, start):
+        def _match(actual_lines, start=0):
             if strict:
                 if all(expected_lines.match(line) for line in actual_lines[start:]):
                     return start, start + len(actual_lines[start:])

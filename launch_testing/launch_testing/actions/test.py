@@ -19,14 +19,13 @@ from typing import Optional
 from typing import Union
 
 from launch import LaunchContext
-from launch import SomeEntitiesType
 from launch import SomeSubstitutionsType
-from launch.action import Action
 from launch.actions import ExecuteProcess
 from launch.actions import OpaqueFunction
 from launch.actions import TimerAction
 from launch.event import Event
 from launch.event_handlers import OnProcessExit
+from launch.launch_description_entity import LaunchDescriptionEntity
 
 
 class Test(ExecuteProcess):
@@ -49,21 +48,21 @@ class Test(ExecuteProcess):
         """
         super().__init__(**kwargs)
         self.__timeout = timeout
-        self.__timer = None
+        self.__timer: Optional[TimerAction] = None
 
     @property
-    def timeout(self):
+    def timeout(self) -> Union[float, SomeSubstitutionsType, None]:
         """Getter for timeout."""
         return self.__timeout
 
     def __on_process_exit(
         self, event: Event, context: LaunchContext
-    ) -> Optional[SomeEntitiesType]:
+    ) -> None:
         """On shutdown event."""
         if self.__timer:
             self.__timer.cancel()
 
-    def execute(self, context: LaunchContext) -> Optional[List[Action]]:
+    def execute(self, context: LaunchContext) -> Optional[List[LaunchDescriptionEntity]]:
         """
         Execute the action.
 
@@ -85,4 +84,5 @@ class Test(ExecuteProcess):
         if not actions:
             return [self.__timer]
 
-        return actions.append(self.__timer)
+        actions.append(self.__timer)
+        return None

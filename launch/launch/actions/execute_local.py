@@ -28,7 +28,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Text
-from typing import Tuple  # noqa: F401
 from typing import Union
 
 import launch.logging
@@ -355,7 +354,7 @@ class ExecuteLocal(Action):
     def __on_process_stdin(
         self,
         event: ProcessIO
-    ) -> Optional[SomeEntitiesType]:
+    ) -> None:
         self.__logger.warning(
             "in ExecuteProcess('{}').__on_process_stdin_event()".format(id(self)),
         )
@@ -639,7 +638,9 @@ class ExecuteLocal(Action):
 
         self.__respawn = cast(bool, perform_typed_substitution(context, self.__respawn, bool))
 
-    def execute(self, context: LaunchContext) -> None:
+    # Return type has to be broaden for subclasses.
+    # For example launch_testing.actions.test.Test
+    def execute(self, context: LaunchContext) -> Optional[List[LaunchDescriptionEntity]]:
         """
         Execute the action.
 

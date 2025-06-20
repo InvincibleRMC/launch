@@ -41,6 +41,6 @@ class GTest(Test):
         self.__path = path
 
     @property
-    def path(self):
+    def path(self) -> SomeSubstitutionsType:
         """Getter for path."""
         return self.__path

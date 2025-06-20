@@ -13,6 +13,9 @@
 # limitations under the License.
 
 import contextlib
+from typing import Callable
+from typing import Generator
+from typing import Optional
 
 import launch
 import launch.actions
@@ -23,10 +26,27 @@ from ..io_handler import ActiveIoHandler
 from ..proc_info_handler import ActiveProcInfoHandler
 
 
+class BoolWithText:
+
+    def __init__(self, result: bool, output: Optional[str]):
+        self._result = result
+        self._output = output
+
+    def __bool__(self) -> bool:
+        return self._result
+
+    def __repr__(self) -> str:
+        return f'<BoolWithText({self._result}): {repr(self._output)}>'
+
+
 class ProcessProxy:
     """A proxy to interact with `launch.actions.ExecuteProcess` instances."""
 
-    def __init__(self, process_action, proc_info, proc_output, *, output_filter=None):
+    def __init__(self,
+                 process_action: launch.actions.ExecuteProcess,
+                 proc_info: ActiveProcInfoHandler,
+                 proc_output: ActiveIoHandler,
+                 *, output_filter: Optional[Callable[[str], str]] = None):
         """
         Construct a proxy for the given ``process_action``.
 
@@ -49,7 +69,7 @@ class ProcessProxy:
         self._proc_output = proc_output
         self._output_filter = output_filter
 
-    def wait_for_shutdown(self, timeout=None):
+    def wait_for_shutdown(self, timeout: Optional[float] = None) -> bool:
         """
         Wait for the target process to shutdown.
 
@@ -61,7 +81,8 @@ class ProcessProxy:
                 lambda: self.terminated, timeout=timeout
             )
 
-    def wait_for_output(self, condition=None, timeout=None):
+    def wait_for_output(self, condition: Optional[Callable[[str], bool]] = None,
+                        timeout: Optional[float] = None) -> BoolWithText:
         """
         Wait for the target process to produce any output, either over stdout or stderr.
 
@@ -79,22 +100,10 @@ class ProcessProxy:
 
         actual_output = None
 
-        def remember_output():
+        def remember_output() -> str:
             nonlocal actual_output
             actual_output = self.output
             return actual_output
-
-        class BoolWithText:
-
-            def __init__(self, result, output):
-                self._result = result
-                self._output = output
-
-            def __bool__(self):
-                return self._result
-
-            def __repr__(self):
-                return f'<BoolWithText({self._result}): {repr(self._output)}>'
 
         with self._proc_output.io_event:
             bool_result = self._proc_output.io_event.wait_for(
@@ -107,7 +116,7 @@ class ProcessProxy:
         return self._process_action
 
     @property
-    def stderr(self):
+    def stderr(self) -> str:
         output_events = self._proc_output[self._process_action]
         output_text = ''.join(ev.text.decode() for ev in output_events if ev.from_stderr)
         if self._output_filter is not None:
@@ -115,7 +124,7 @@ class ProcessProxy:
         return output_text
 
     @property
-    def stdout(self):
+    def stdout(self) -> str:
         output_events = self._proc_output[self._process_action]
         output_text = ''.join(ev.text.decode() for ev in output_events if ev.from_stdout)
         if self._output_filter is not None:
@@ -123,7 +132,7 @@ class ProcessProxy:
         return output_text
 
     @property
-    def output(self):
+    def output(self) -> str:
         output_events = self._proc_output[self._process_action]
         output_text = ''.join(ev.text.decode() for ev in output_events)
         if self._output_filter is not None:
@@ -131,7 +140,7 @@ class ProcessProxy:
         return output_text
 
     @property
-    def running(self):
+    def running(self) -> bool:
         if self._process_action not in self._proc_info.processes():
             return False
         return isinstance(
@@ -140,7 +149,7 @@ class ProcessProxy:
         )
 
     @property
-    def terminated(self):
+    def terminated(self) -> bool:
         if self._process_action not in self._proc_info.processes():
             return False
         return isinstance(
@@ -149,12 +158,16 @@ class ProcessProxy:
         )
 
     @property
-    def exit_code(self):
+    def exit_code(self) -> int:
         return self._proc_info[self._process_action].returncode
 
 
 @contextlib.contextmanager
-def launch_process(launch_service, process_action, proc_info, proc_output, **kwargs):
+def launch_process(launch_service: launch.LaunchService,
+                   process_action: launch.actions.ExecuteProcess,
+                   proc_info: ActiveProcInfoHandler,
+                   proc_output: ActiveIoHandler,
+                   **kwargs) -> Generator[ProcessProxy, None, None]:
     """
     Launch and interact with a process.
 
