@@ -2,6 +2,21 @@
 Changelog for package launch_xml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.9.5 (2025-11-07)
+------------------
+* Expose StringJoinSubstitution to frontend (`#857 <https://github.com/ros2/launch//issues/857>`_)
+* Contributors: Christian Ruf
+
+3.9.4 (2025-10-17)
+------------------
+* Fix all/any in xml and yaml launch files (`#906 <https://github.com/ros2/launch/issues/906>`_)
+* Contributors: Matthijs van der Burgh
+
+3.9.3 (2025-10-06)
+------------------
+* Allow providing launch args to include using let in frontends (`#848 <https://github.com/ros2/launch//issues/848>`_)
+* Contributors: Christophe Bedard
+
 3.9.2 (2025-07-29)
 ------------------
 * Fix Setuptoolsdeprecations (`#898 <https://github.com/ros2/launch/issues/898>`_)

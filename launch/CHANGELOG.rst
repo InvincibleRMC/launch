@@ -2,6 +2,25 @@
 Changelog for package launch
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.9.5 (2025-11-07)
+------------------
+* Make the directory-finding substitutions into a PathSubstitution for / operator (`#914 <https://github.com/ros2/launch//issues/914>`_)
+* Expose StringJoinSubstitution to frontend (`#857 <https://github.com/ros2/launch//issues/857>`_)
+* Contributors: Christian Ruf, Emerson Knapp
+
+3.9.4 (2025-10-17)
+------------------
+* Shared logic for substitutions (`#769 <https://github.com/ros2/launch/issues/769>`_)
+* Use yaml types (`#781 <https://github.com/ros2/launch/issues/781>`_)
+* Switch osrf_pycommon dependency to system package (`#817 <https://github.com/ros2/launch/issues/817>`_)
+* Fix all/any in xml and yaml launch files (`#906 <https://github.com/ros2/launch/issues/906>`_)
+* Contributors: Matthijs van der Burgh, Michael Carlstrom, Scott K Logan
+
+3.9.3 (2025-10-06)
+------------------
+* Allow providing launch args to include using let in frontends (`#848 <https://github.com/ros2/launch//issues/848>`_)
+* Contributors: Christophe Bedard
+
 3.9.2 (2025-07-29)
 ------------------
 * Fix Setuptoolsdeprecations (`#898 <https://github.com/ros2/launch/issues/898>`_)
